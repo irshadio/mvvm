@@ -1,23 +1,15 @@
 # Static analysis for the MVVM architecture.
 #
-# We deliberately rely on the STABLE analyzer layer (built-in lints + strict
-# language modes) rather than analyzer plugins (custom_lint / riverpod_lint /
-# import_rules). Those plugins are version-churny and currently cannot co-exist
-# with Riverpod 3.2 + Freezed 3 + the current analyzer. Architectural import
-# boundaries are enforced separately by `tool/check_boundaries.dart`, which is
-# transparent, conflict-free, and easy for agents to read and extend.
+# Lint baseline: very_good_analysis (strict). Architectural import boundaries
+# are enforced separately by `tool/check_boundaries.dart` (analyzer plugins like
+# custom_lint/import_rules can't co-exist with Riverpod 3.2 + Freezed 3 today).
 #
-# Run:  flutter analyze                          (must be clean before every commit)
-#       dart run tool/check_boundaries.dart      (feature/layer import rules)
+# Run:  flutter analyze                      (must be clean before every commit)
+#       dart run tool/check_boundaries.dart  (feature/layer import rules)
 
-include: package:flutter_lints/flutter.yaml
+include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
-  language:
-    # High-value strict modes: catch implicit casts / dynamic / raw generics.
-    strict-casts: true
-    strict-inference: true
-    strict-raw-types: true
   errors:
     # Freezed / json_serializable place annotations on factory params; expected.
     invalid_annotation_target: ignore
@@ -30,20 +22,7 @@ analyzer:
 
 linter:
   rules:
-    # Consistency — agents copy templates verbatim, keep one house style.
-    - prefer_single_quotes
-    - directives_ordering
-    - use_super_parameters
-    - sort_child_properties_last
-    # Immutability / const-correctness (Freezed models + const widgets).
-    - prefer_const_constructors
-    - prefer_const_constructors_in_immutables
-    - prefer_const_declarations
-    - prefer_final_locals
-    - prefer_final_in_for_each
-    # Safety / correctness.
-    - always_declare_return_types
-    - avoid_dynamic_calls
-    - unawaited_futures
-    - only_throw_errors
-    - throw_in_finally
+    # This is an application, not a published package — documenting every public
+    # member is excessive. Public APIs are still documented by convention where
+    # it helps agents.
+    public_member_api_docs: false

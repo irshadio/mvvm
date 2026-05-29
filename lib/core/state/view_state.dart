@@ -1,6 +1,6 @@
 import 'package:freezed_annotation/freezed_annotation.dart';
 
-import '../error/failure.dart';
+import 'package:mvvm/core/error/failure.dart';
 
 part 'view_state.freezed.dart';
 

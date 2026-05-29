@@ -1,8 +1,7 @@
 import 'package:fpdart/fpdart.dart';
+import 'package:mvvm/core/error/failure.dart';
+import 'package:mvvm/core/state/view_state.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../error/failure.dart';
-import 'view_state.dart';
 
 /// The reusable `api -> data -> state` spine shared by every ViewModel.
 ///
@@ -46,7 +45,7 @@ mixin RemoteStateMixin<T> on $Notifier<ViewState<T>> {
         NoConnectionFailure() => ViewState<T>.noInternet(),
         _ => ViewState<T>.error(failure),
       },
-      (value) => ViewState<T>.data(value),
+      ViewState<T>.data,
     );
   }
 }

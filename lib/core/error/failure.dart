@@ -13,7 +13,8 @@ part 'failure.freezed.dart';
 /// without pattern-matching; switch only when you need case-specific fields.
 @freezed
 sealed class Failure with _$Failure {
-  /// Transport-level problem (socket, DNS, TLS) that is not a clean HTTP status.
+  /// Transport-level problem (socket, DNS, TLS) that is not a clean HTTP
+  /// status.
   const factory Failure.network({required String message}) = NetworkFailure;
 
   /// Server returned a non-2xx HTTP status.
@@ -46,7 +47,8 @@ sealed class Failure with _$Failure {
   const factory Failure.cache({required String message}) = CacheFailure;
 
   /// Input or business-rule validation failed.
-  const factory Failure.validation({required String message}) = ValidationFailure;
+  const factory Failure.validation({required String message}) =
+      ValidationFailure;
 
   /// Anything we did not explicitly anticipate.
   const factory Failure.unexpected({
