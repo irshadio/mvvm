@@ -1,5 +1,5 @@
 name: mvvm
-description: "A new Flutter project."
+description: "Enterprise-grade, agent-first MVVM architecture for Flutter (Riverpod 3 + Freezed + fpdart + remote_client + sembast)."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -34,6 +34,16 @@ dependencies:
   # The following adds the Cupertino Icons font to your application.
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
+  flutter_riverpod: ^3.3.1
+  riverpod_annotation: ^4.0.2
+  freezed_annotation: ^3.1.0
+  json_annotation: ^4.12.0
+  fpdart: ^1.2.0
+  remote_client: ^1.0.1
+  sembast: ^3.8.7
+  path_provider: ^2.1.5
+  path: ^1.9.1
+  flutter_secure_storage: ^10.3.1
 
 dev_dependencies:
   flutter_test:
@@ -45,6 +55,10 @@ dev_dependencies:
   # package. See that file for information about deactivating specific lint
   # rules and activating additional ones.
   flutter_lints: ^6.0.0
+  build_runner: ^2.15.0
+  riverpod_generator: ^4.0.4-dev.1
+  freezed: ^3.2.6-dev.1
+  json_serializable: ^6.14.0
 
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec

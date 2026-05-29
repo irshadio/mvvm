@@ -1,0 +1,25 @@
+# Normalize line endings: LF in the repo for all text, so codegen + diffs are
+# stable across macOS/Linux/Windows agents.
+* text=auto eol=lf
+
+# Windows-native scripts keep CRLF.
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+*.ps1   text eol=crlf
+
+# Treat generated Dart as generated in diffs/linguist.
+*.g.dart        linguist-generated text eol=lf
+*.freezed.dart  linguist-generated text eol=lf
+
+# Binary assets (never normalize).
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.ttf   binary
+*.otf   binary
+*.jar   binary
+*.keystore binary
+*.so    binary
+*.dll   binary
