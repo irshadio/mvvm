@@ -1,17 +1,39 @@
 # mvvm
 
-A new Flutter project.
+Enterprise-grade, **agent-first MVVM architecture** for Flutter — Riverpod 3 +
+Freezed + fpdart + `remote_client` + sembast. Built so an automated agent
+(Claude Code / Opus) can add features by following one fixed set of patterns,
+and a human can review them quickly.
 
-## Getting Started
+## Getting started
 
-This project is a starting point for a Flutter application.
+```bash
+flutter pub get
+dart run build_runner build   # generate *.g.dart / *.freezed.dart (REQUIRED)
+flutter run
+```
 
-A few resources to get you started if this is your first Flutter project:
+> Generated files are git-ignored — always run `build_runner` after cloning or
+> editing an annotated file. `.env` (consumed by `envied`) is committed here with
+> a public API URL; replace it / obfuscate for real secrets.
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+## Docs
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+- **[CLAUDE.md](CLAUDE.md)** — the authoritative rules agents follow: state model,
+  the single ViewModel pattern, DI/composition root, import boundaries, and the
+  step-by-step "add a feature" runbook.
+- **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)** — layered structure, the
+  api→data→state→view flow, and the rationale (with sources) behind each decision.
+
+## Quality gates
+
+```bash
+flutter analyze                      # very_good_analysis (strict)
+dart run tool/check_boundaries.dart  # feature/layer import boundaries
+flutter test
+```
+
+## Reference feature
+
+`lib/features/posts/` — remote fetch + sembast cache + offline fallback, with a
+list and detail screen. It is the canonical template; copy it to add a feature.
