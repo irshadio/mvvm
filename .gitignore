@@ -33,6 +33,13 @@ migrate_working_dir/
 /build/
 /coverage/
 
+# Generated code — NOT committed (keeps diffs/PR review clean for humans).
+# Always run `dart run build_runner build` after cloning or editing a model;
+# missing *.freezed.dart / *.g.dart before codegen is EXPECTED, not an error.
+*.g.dart
+*.freezed.dart
+*.mocks.dart
+
 # Symbolication related
 app.*.symbols
 
