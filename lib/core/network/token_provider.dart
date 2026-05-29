@@ -1,7 +1,6 @@
+import 'package:mvvm/core/storage/secure_store.dart';
 import 'package:remote_client/remote_client.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
-
-import '../storage/secure_store.dart';
 
 part 'token_provider.g.dart';
 
@@ -24,14 +23,15 @@ class SecureTokenProvider implements TokenProvider {
 
   @override
   Future<String?> refreshToken() async {
-    // TEMPLATE: call your refresh-token endpoint here, persist the new token to
-    // [SecureStore], and return it. Returning null tells the AuthInterceptor
-    // that refresh is unavailable, which triggers
-    // UnauthorizedHandler.handleUnauthorized().
+    // TEMPLATE: call your refresh-token endpoint, persist the new token to
+    // [SecureStore] and return it. Returning null tells the AuthInterceptor
+    // refresh is unavailable, triggering the UnauthorizedHandler.
     return null;
   }
 }
 
+/// Bound to [SecureTokenProvider] in `core/bootstrap`.
 @riverpod
-TokenProvider tokenProvider(Ref ref) =>
-    SecureTokenProvider(ref.watch(secureStoreProvider));
+TokenProvider tokenProvider(Ref ref) => throw UnimplementedError(
+  'tokenProviderProvider must be overridden in ProviderScope — see core/bootstrap.',
+);

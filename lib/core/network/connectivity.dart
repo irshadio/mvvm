@@ -3,15 +3,17 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 
 part 'connectivity.g.dart';
 
-/// Real internet *reachability* (not just interface state) via
-/// `remote_client`'s `ConnectivityServiceImpl`, which performs parallel DNS
-/// probes to highly-available hosts with a short result cache.
+/// Real internet *reachability* (not just interface state). Bound in
+/// `core/bootstrap` to `remote_client`'s `ConnectivityServiceImpl`, which
+/// performs parallel DNS probes to highly-available hosts with a short cache.
 @riverpod
-ConnectivityService connectivityService(Ref ref) => ConnectivityServiceImpl();
+ConnectivityService connectivityService(Ref ref) => throw UnimplementedError(
+  'connectivityServiceProvider must be overridden in ProviderScope — see core/bootstrap.',
+);
 
 /// Reactive reachability for a global "no internet" indicator.
 ///
-/// Polls the [connectivityService] on an interval; the service's own 5s result
+/// Polls [connectivityService] on an interval; the service's own ~5s result
 /// cache keeps the DNS probes cheap. Widgets can `ref.watch` this to show an
 /// offline banner; per-request handling still flows through
 /// `Failure.noConnection -> ViewState.noInternet`.
@@ -19,6 +21,7 @@ ConnectivityService connectivityService(Ref ref) => ConnectivityServiceImpl();
 Stream<bool> connectivityStatus(Ref ref) async* {
   final service = ref.watch(connectivityServiceProvider);
   yield await service.isConnected();
-  yield* Stream<void>.periodic(const Duration(seconds: 10))
-      .asyncMap((_) => service.isConnected());
+  yield* Stream<void>.periodic(
+    const Duration(seconds: 10),
+  ).asyncMap((_) => service.isConnected());
 }
