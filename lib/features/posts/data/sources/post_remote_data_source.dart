@@ -12,7 +12,7 @@ part 'post_remote_data_source.g.dart';
 /// this implementation; it returns app-typed `Either<Failure, ...>` so the
 /// repository and everything above it never see a transport type.
 abstract interface class PostRemoteDataSource {
-  Future<Either<Failure, List<PostDto>>> fetchPosts();
+  Future<Either<Failure, List<PostDto>>> fetchPosts({int page, int limit});
   Future<Either<Failure, PostDto>> fetchPost(int id);
   Future<Either<Failure, PostDto>> createPost(CreatePostInput input);
 }
@@ -23,9 +23,13 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
   final rc.RemoteClient _client;
 
   @override
-  Future<Either<Failure, List<PostDto>>> fetchPosts() async {
+  Future<Either<Failure, List<PostDto>>> fetchPosts({
+    int page = 1,
+    int limit = 20,
+  }) async {
     final result = await _client.get<List<PostDto>>(
       '/posts',
+      queryParams: <String, dynamic>{'_page': page, '_limit': limit},
       fromJson: (json) => (json! as List<dynamic>)
           .map((e) => PostDto.fromJson(e as Map<String, dynamic>))
           .toList(),

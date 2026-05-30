@@ -19,8 +19,10 @@ class _StubRepository implements PostRepository {
       created;
 
   @override
-  Future<Either<Failure, List<Post>>> getPosts() async =>
-      throw UnimplementedError();
+  Future<Either<Failure, List<Post>>> getPosts({
+    int page = 1,
+    int limit = 20,
+  }) => throw UnimplementedError();
 
   @override
   Future<Either<Failure, Post>> getPost(int id) async =>

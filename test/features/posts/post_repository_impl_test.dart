@@ -15,7 +15,10 @@ class _FakeRemote implements PostRemoteDataSource {
   final Either<Failure, PostDto>? single;
 
   @override
-  Future<Either<Failure, List<PostDto>>> fetchPosts() async => result;
+  Future<Either<Failure, List<PostDto>>> fetchPosts({
+    int page = 1,
+    int limit = 20,
+  }) async => result;
 
   @override
   Future<Either<Failure, PostDto>> fetchPost(int id) async =>

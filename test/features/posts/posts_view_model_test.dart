@@ -16,7 +16,10 @@ class _StubRepository implements PostRepository {
   Either<Failure, List<Post>> result;
 
   @override
-  Future<Either<Failure, List<Post>>> getPosts() async => result;
+  Future<Either<Failure, List<Post>>> getPosts({
+    int page = 1,
+    int limit = 20,
+  }) => Future<Either<Failure, List<Post>>>.value(result);
 
   @override
   Future<Either<Failure, Post>> getPost(int id) async =>
@@ -26,6 +29,34 @@ class _StubRepository implements PostRepository {
   Future<Either<Failure, Post>> createPost(CreatePostInput input) async =>
       throw UnimplementedError();
 }
+
+/// Repository that serves a different list per requested page.
+class _PagingRepository implements PostRepository {
+  _PagingRepository(this.pages);
+
+  final Map<int, List<Post>> pages;
+
+  @override
+  Future<Either<Failure, List<Post>>> getPosts({
+    int page = 1,
+    int limit = 20,
+  }) => Future<Either<Failure, List<Post>>>.value(
+    right<Failure, List<Post>>(pages[page] ?? const <Post>[]),
+  );
+
+  @override
+  Future<Either<Failure, Post>> getPost(int id) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, Post>> createPost(CreatePostInput input) async =>
+      throw UnimplementedError();
+}
+
+List<Post> _posts(int from, int count) => List<Post>.generate(
+  count,
+  (i) => Post(id: from + i, title: 'T${from + i}', body: 'B'),
+);
 
 void main() {
   const posts = <Post>[Post(id: 1, title: 'T', body: 'B')];
@@ -84,5 +115,47 @@ void main() {
     final state = container.read(postsViewModelProvider);
     expect(state, isA<ViewError<List<Post>>>());
     expect(state.dataOrNull, posts);
+  });
+
+  ProviderContainer containerFor(PostRepository repo) {
+    final container = ProviderContainer(
+      overrides: [postRepositoryProvider.overrideWith((ref) => repo)],
+    );
+    addTearDown(container.dispose);
+    return container;
+  }
+
+  test('loadMore appends the next page and tracks hasMore', () async {
+    // A full first page (20) implies more; a short second page (5) is the end.
+    final container = containerFor(
+      _PagingRepository(<int, List<Post>>{1: _posts(1, 20), 2: _posts(21, 5)}),
+    );
+    final notifier = container.read(postsViewModelProvider.notifier);
+
+    await notifier.load();
+    expect(container.read(postsViewModelProvider).dataOrNull, hasLength(20));
+    expect(notifier.hasMore, isTrue);
+
+    await notifier.loadMore();
+    expect(container.read(postsViewModelProvider).dataOrNull, hasLength(25));
+    expect(notifier.hasMore, isFalse);
+
+    // The last page is in — loadMore is now a no-op.
+    await notifier.loadMore();
+    expect(container.read(postsViewModelProvider).dataOrNull, hasLength(25));
+  });
+
+  test('load() resets pagination back to the first page', () async {
+    final container = containerFor(
+      _PagingRepository(<int, List<Post>>{1: _posts(1, 20), 2: _posts(21, 5)}),
+    );
+    final notifier = container.read(postsViewModelProvider.notifier);
+
+    await notifier.load();
+    await notifier.loadMore(); // 25 items, hasMore false
+    await notifier.load(); // reload -> first page only
+
+    expect(container.read(postsViewModelProvider).dataOrNull, hasLength(20));
+    expect(notifier.hasMore, isTrue);
   });
 }

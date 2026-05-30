@@ -12,10 +12,12 @@ import 'package:mvvm/features/posts/domain/repositories/post_repository.dart';
 /// Fake repository so the boot path needs no network or database.
 class _FakePostRepository implements PostRepository {
   @override
-  Future<Either<Failure, List<Post>>> getPosts() async =>
-      right<Failure, List<Post>>(
-        const <Post>[Post(id: 1, title: 'Hello', body: 'World')],
-      );
+  Future<Either<Failure, List<Post>>> getPosts({
+    int page = 1,
+    int limit = 20,
+  }) async => right<Failure, List<Post>>(
+    const <Post>[Post(id: 1, title: 'Hello', body: 'World')],
+  );
 
   @override
   Future<Either<Failure, Post>> getPost(int id) async =>

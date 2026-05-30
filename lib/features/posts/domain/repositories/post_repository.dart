@@ -9,8 +9,9 @@ part 'post_repository.g.dart';
 /// Contract for posts data access. ViewModels depend on this abstraction, never
 /// on a concrete implementation or a data source.
 abstract interface class PostRepository {
-  /// All posts. Falls back to the local cache when offline.
-  Future<Either<Failure, List<Post>>> getPosts();
+  /// A page of posts (1-based, [page]/[limit]). Falls back to the local cache
+  /// when offline on the first page.
+  Future<Either<Failure, List<Post>>> getPosts({int page, int limit});
 
   /// A single post by id.
   Future<Either<Failure, Post>> getPost(int id);
