@@ -1,5 +1,6 @@
 import 'package:fpdart/fpdart.dart';
 import 'package:mvvm/core/error/failure.dart';
+import 'package:mvvm/features/posts/domain/entities/create_post_input.dart';
 import 'package:mvvm/features/posts/domain/entities/post.dart';
 import 'package:riverpod_annotation/riverpod_annotation.dart';
 
@@ -13,6 +14,9 @@ abstract interface class PostRepository {
 
   /// A single post by id.
   Future<Either<Failure, Post>> getPost(int id);
+
+  /// Creates a post, returning the created entity (server-assigned id).
+  Future<Either<Failure, Post>> createPost(CreatePostInput input);
 }
 
 /// Bound to `PostRepositoryImpl` in `posts_overrides.dart`.

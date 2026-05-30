@@ -3,6 +3,7 @@ import 'package:mvvm/core/error/failure.dart';
 import 'package:mvvm/features/posts/data/dtos/post_dto.dart';
 import 'package:mvvm/features/posts/data/sources/post_local_data_source.dart';
 import 'package:mvvm/features/posts/data/sources/post_remote_data_source.dart';
+import 'package:mvvm/features/posts/domain/entities/create_post_input.dart';
 import 'package:mvvm/features/posts/domain/entities/post.dart';
 import 'package:mvvm/features/posts/domain/repositories/post_repository.dart';
 
@@ -50,6 +51,12 @@ class PostRepositoryImpl implements PostRepository {
   @override
   Future<Either<Failure, Post>> getPost(int id) async {
     final result = await remote.fetchPost(id);
+    return result.map((dto) => dto.toEntity());
+  }
+
+  @override
+  Future<Either<Failure, Post>> createPost(CreatePostInput input) async {
+    final result = await remote.createPost(input);
     return result.map((dto) => dto.toEntity());
   }
 }

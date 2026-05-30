@@ -5,6 +5,7 @@ import 'package:mvvm/features/posts/data/dtos/post_dto.dart';
 import 'package:mvvm/features/posts/data/repositories/post_repository_impl.dart';
 import 'package:mvvm/features/posts/data/sources/post_local_data_source.dart';
 import 'package:mvvm/features/posts/data/sources/post_remote_data_source.dart';
+import 'package:mvvm/features/posts/domain/entities/create_post_input.dart';
 import 'package:mvvm/features/posts/domain/entities/post.dart';
 
 class _FakeRemote implements PostRemoteDataSource {
@@ -18,6 +19,10 @@ class _FakeRemote implements PostRemoteDataSource {
 
   @override
   Future<Either<Failure, PostDto>> fetchPost(int id) async =>
+      single ?? (throw UnimplementedError());
+
+  @override
+  Future<Either<Failure, PostDto>> createPost(CreatePostInput input) async =>
       single ?? (throw UnimplementedError());
 }
 
@@ -140,6 +145,26 @@ void main() {
     result.match(
       (f) => expect(f, failure),
       (loaded) => fail('expected Left, got Right($loaded)'),
+    );
+  });
+
+  test('createPost maps the created DTO to an entity', () async {
+    const created = PostDto(id: 101, userId: 1, title: 'New', body: 'Body');
+    final repo = PostRepositoryImpl(
+      remote: _FakeRemote(
+        right<Failure, List<PostDto>>(const <PostDto>[]),
+        single: right<Failure, PostDto>(created),
+      ),
+      local: _FakeLocal(),
+    );
+
+    final result = await repo.createPost(
+      const CreatePostInput(title: 'New', body: 'Body'),
+    );
+
+    result.match(
+      (failure) => fail('expected Right, got Left($failure)'),
+      (post) => expect(post, const Post(id: 101, title: 'New', body: 'Body')),
     );
   });
 }

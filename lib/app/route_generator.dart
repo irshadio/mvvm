@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:mvvm/core/routing/app_routes.dart';
 import 'package:mvvm/features/posts/domain/entities/post.dart';
+import 'package:mvvm/features/posts/presentation/view/create_post_view.dart';
 import 'package:mvvm/features/posts/presentation/view/post_detail_view.dart';
 import 'package:mvvm/features/posts/presentation/view/posts_view.dart';
 import 'package:mvvm/features/splash/presentation/view/splash_view.dart';
@@ -22,6 +23,8 @@ Route<dynamic> onGenerateRoute(RouteSettings settings) {
         return _errorRoute('postDetail requires a Post argument', settings);
       }
       return _materialRoute(PostDetailView(post: argument), settings);
+    case Routes.createPost:
+      return _materialRoute(const CreatePostView(), settings);
     default:
       return _errorRoute('No route defined for "${settings.name}"', settings);
   }

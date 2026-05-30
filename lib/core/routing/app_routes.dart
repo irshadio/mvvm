@@ -12,6 +12,9 @@ abstract final class Routes {
 
   /// Post detail. Pass a `Post` as the route `arguments`.
   static const String postDetail = '/post-detail';
+
+  /// Create-post form. Returns the created `Post`, or `null` if cancelled.
+  static const String createPost = '/create-post';
 }
 
 /// Global navigator key for navigation from non-widget code (e.g. the

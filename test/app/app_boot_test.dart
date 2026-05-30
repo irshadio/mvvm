@@ -5,6 +5,7 @@ import 'package:fpdart/fpdart.dart';
 import 'package:mvvm/app/app.dart';
 import 'package:mvvm/core/error/failure.dart';
 import 'package:mvvm/core/network/connectivity.dart';
+import 'package:mvvm/features/posts/domain/entities/create_post_input.dart';
 import 'package:mvvm/features/posts/domain/entities/post.dart';
 import 'package:mvvm/features/posts/domain/repositories/post_repository.dart';
 
@@ -19,6 +20,12 @@ class _FakePostRepository implements PostRepository {
   @override
   Future<Either<Failure, Post>> getPost(int id) async =>
       right<Failure, Post>(const Post(id: 1, title: 'Hello', body: 'World'));
+
+  @override
+  Future<Either<Failure, Post>> createPost(CreatePostInput input) async =>
+      right<Failure, Post>(
+        Post(id: 101, title: input.title, body: input.body),
+      );
 }
 
 void main() {

@@ -3,6 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mvvm/core/error/failure.dart';
 import 'package:mvvm/core/state/view_state.dart';
+import 'package:mvvm/features/posts/domain/entities/create_post_input.dart';
 import 'package:mvvm/features/posts/domain/entities/post.dart';
 import 'package:mvvm/features/posts/domain/repositories/post_repository.dart';
 import 'package:mvvm/features/posts/presentation/view_model/posts_view_model.dart';
@@ -19,6 +20,10 @@ class _StubRepository implements PostRepository {
 
   @override
   Future<Either<Failure, Post>> getPost(int id) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, Post>> createPost(CreatePostInput input) async =>
       throw UnimplementedError();
 }
 

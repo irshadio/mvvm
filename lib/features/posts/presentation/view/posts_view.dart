@@ -30,6 +30,18 @@ class _PostsViewState extends ConsumerState<PostsView>
     final state = ref.watch(postsViewModelProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Posts')),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final created = await context.pushNamed<Post>(Routes.createPost);
+          // Reload so the list reflects the new post. NOTE: JSONPlaceholder
+          // fakes POST (returns id 101 but does not persist), so the reloaded
+          // list will not actually contain it — a real backend would.
+          if (created != null) {
+            await ref.read(postsViewModelProvider.notifier).load();
+          }
+        },
+        child: const Icon(Icons.add),
+      ),
       body: ViewStateSwitcher<List<Post>>(
         state: state,
         onRetry: () => ref.read(postsViewModelProvider.notifier).load(),
