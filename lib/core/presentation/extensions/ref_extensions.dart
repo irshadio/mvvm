@@ -1,6 +1,8 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:mvvm/core/error/failure.dart';
 import 'package:mvvm/core/presentation/extensions/context_extensions.dart';
+import 'package:mvvm/core/state/submission_state.dart';
 import 'package:mvvm/core/state/view_state.dart';
 // ProviderListenable is exported by riverpod_annotation, not flutter_riverpod.
 import 'package:riverpod_annotation/riverpod_annotation.dart';
@@ -30,6 +32,37 @@ extension WidgetRefX on WidgetRef {
       };
       if (message != null && context.mounted) {
         context.showSnackBar(message, isError: true);
+      }
+    });
+  }
+
+  /// Reacts ONCE to a mutation's terminal transition — the write-side
+  /// counterpart to [listenRefreshFailures].
+  ///
+  /// A mutating View calls this in `build`: on [SubmissionSuccess] it runs
+  /// [onSuccess] (e.g. pop the form + toast); on [SubmissionFailure] it runs
+  /// [onFailure], defaulting to an error snackbar with the failure message.
+  /// `idle` / `inProgress` transitions are handled by the View watching the
+  /// state (to disable the action), not here.
+  void listenSubmission<T>(
+    ProviderListenable<SubmissionState<T>> provider,
+    BuildContext context, {
+    required void Function(T value) onSuccess,
+    void Function(Failure failure)? onFailure,
+  }) {
+    listen<SubmissionState<T>>(provider, (previous, next) {
+      if (!context.mounted) return;
+      switch (next) {
+        case SubmissionSuccess<T>(:final value):
+          onSuccess(value);
+        case SubmissionFailure<T>(:final failure):
+          if (onFailure != null) {
+            onFailure(failure);
+          } else {
+            context.showSnackBar(failure.message, isError: true);
+          }
+        case SubmissionIdle<T>() || SubmissionInProgress<T>():
+          break;
       }
     });
   }

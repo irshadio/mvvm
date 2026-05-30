@@ -162,13 +162,15 @@ states. You never write that boilerplate.
 
 > ⚠️ **`$Notifier` quarantine.** `RemoteStateMixin` is declared
 > `on $Notifier<ViewState<T>>`. `$Notifier` is an internal `riverpod_generator`
-> type marked "Do not use" — it is the ONE sanctioned-API exception in this
-> codebase, and it is confined to `core/state/remote_state_mixin.dart`. **No
-> other file may name `$Notifier`.** The public `Notifier` base does NOT work
-> with generated Notifiers (verified). After any Riverpod / riverpod_generator
-> bump, run the guard test (`test/core/remote_state_mixin_test.dart`); if it
-> fails, open a generated `*.g.dart`, read what `_$Xxx` extends, and update the
-> `on` clause in that one file.
+> type marked "Do not use" — it is the sanctioned-API exception in this
+> codebase, confined to **`core/state/`**: only `remote_state_mixin.dart` and
+> its write-side twin `mutation_state_mixin.dart` (§4b) may name it. **No other
+> file may name `$Notifier`.** The public `Notifier` base does NOT work with
+> generated Notifiers (verified). After any Riverpod / riverpod_generator bump,
+> run both guard tests (`test/core/remote_state_mixin_test.dart`,
+> `test/core/mutation_state_mixin_test.dart`); if one fails, open a generated
+> `*.g.dart`, read what `_$Xxx` extends, and update the `on` clause in that one
+> file.
 
 The View triggers the initial load after the first frame via `ViewReadyMixin`:
 
@@ -190,6 +192,58 @@ class _FooViewState extends ConsumerState<FooView>
 Views get utilities from **extensions on `BuildContext`** (`context.colors`,
 `context.showSnackBar(...)`, `context.pushNamed(...)`), never from a `BaseView`
 superclass (a widget can extend only one class).
+
+---
+
+## 4b. The mutation pattern (writes — create / update / delete)
+
+Reads use `ViewState<T>` + `RemoteStateMixin`. **Writes use the parallel pair
+`SubmissionState<T>` + `MutationStateMixin`** (`core/state/`). The reference is
+`features/posts/` → `CreatePostViewModel` / `create_post_view.dart`.
+
+`SubmissionState<T>` models a *submission* lifecycle, not a display one:
+
+```dart
+SubmissionState.idle()              // pristine form
+SubmissionState.inProgress()        // submit in flight
+SubmissionState.success(T value)    // created/updated value
+SubmissionState.failure(Failure)    // typed failure
+```
+
+The **form fields live in the View** (a `Form` + `TextEditingController`s with
+validators) — the ViewModel state only tracks the submission, so it can express
+“fields on screen *and* a submit in flight.” The ViewModel mirrors §4:
+
+```dart
+@riverpod
+class CreateFooViewModel extends _$CreateFooViewModel
+    with MutationStateMixin<Foo> {
+  @override
+  SubmissionState<Foo> build() => const SubmissionState.idle();
+
+  Future<void> submit(FooInput input) =>
+      runMutation(() => ref.read(fooRepositoryProvider).createFoo(input));
+}
+```
+
+`runMutation` sets `inProgress`, awaits, and — if still mounted — maps
+`success`/`failure`. The View **watches** the state to disable the button while
+`state.isInProgress`, and **reacts once** to the terminal transition with the
+required one-liner (the write-side `listenRefreshFailures`):
+
+```dart
+ref.listenSubmission(
+  createFooViewModelProvider,
+  context,
+  onSuccess: (foo) { context.pop(); context.showSnackBar('Created'); },
+  // onFailure defaults to an error snackbar with failure.message
+);
+```
+
+The repository/data-source layers are unchanged (§5–§6): a new
+`createFoo(FooInput)` returning `Future<Either<Failure, Foo>>`, the remote source
+`POST`s and confines `rc.*`. Do **not** add `AsyncValue`/`AsyncNotifier` for
+form state — `SubmissionState` is the one shape.
 
 ---
 
@@ -365,7 +419,8 @@ Mirror `lib/features/posts/`. For a feature `bar` with entity `Bar`:
 
 - ❌ Use `.when` / `.map` / `.maybeWhen` on Freezed unions or `AsyncValue` — use
   `switch`.
-- ❌ Name `$Notifier` anywhere except `core/state/remote_state_mixin.dart`.
+- ❌ Name `$Notifier` anywhere except `core/state/remote_state_mixin.dart` and
+  `core/state/mutation_state_mixin.dart`.
 - ❌ Let a `rc.*` (`remote_client`) type appear outside `data/`.
 - ❌ Construct an `Impl` directly in a feature — bind it via an override.
 - ❌ Import one feature from another, or import features/app from core.

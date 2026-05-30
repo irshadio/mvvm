@@ -16,7 +16,8 @@ Run `git diff dev...HEAD` (or against the base branch) and check, citing file:li
 - `rc.*` (remote_client) types appear ONLY inside `data/`.
 - Pattern matching uses Dart 3 `switch` — never `.when` / `.map` / `.maybeWhen`.
 - Every contract is an `abstract interface class` + `Impl` + a throwing `@riverpod` provider + an override in `<feature>_overrides.dart` that is registered in `lib/main.dart`.
-- `$Notifier` is named ONLY in `core/state/remote_state_mixin.dart`.
+- `$Notifier` is named ONLY in `core/state/remote_state_mixin.dart` or
+  `core/state/mutation_state_mixin.dart`.
 - ViewModels are `@riverpod` + `RemoteStateMixin`; state is `ViewState<T>`. Each
   data View calls `ref.listenRefreshFailures(<provider>, context)` in `build`
   (a failed refresh keeps stale data, so the error must be surfaced — CLAUDE.md
