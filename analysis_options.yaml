@@ -10,10 +10,23 @@
 include: package:very_good_analysis/analysis_options.yaml
 
 analyzer:
+  # Strict type checking. very_good_analysis already enables these, but we state
+  # them explicitly: this file is the authoritative rule set agents read, and an
+  # explicit block keeps the guarantee if the baseline is ever bumped or
+  # swapped. `flutter analyze` is fatal on the resulting diagnostics.
+  language:
+    strict-casts: true # no implicit dynamic -> T casts
+    strict-inference: true # nothing silently inferred as dynamic
+    strict-raw-types: true # no raw generics (List, not List<T>)
   errors:
     # Freezed / json_serializable place annotations on factory params; expected.
     invalid_annotation_target: ignore
     todo: ignore
+    # Promote the lints that map 1:1 to CLAUDE.md §12 "Do NOT" bans from info to
+    # hard errors, so they fail red (and fail plain `dart analyze` and IDEs),
+    # not merely as advisory infos.
+    always_use_package_imports: error # §2/§12: never relative imports
+    avoid_print: error # §8: use AppLogger, never print
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
