@@ -19,9 +19,17 @@ class PostRepositoryImpl implements PostRepository {
     final result = await remote.fetchPosts();
     return result.match(
       (failure) async {
-        // Offline fallback: serve cache when there is no connectivity.
+        // Offline fallback policy: the cache is served ONLY for
+        // `NoConnectionFailure`. A server/timeout error with a populated cache
+        // deliberately surfaces the error rather than masking a live failure
+        // with stale data — only true offline falls back.
         if (failure is NoConnectionFailure) {
-          final cached = await local.readPosts();
+          // The cache is keyed by `id.toString()`, so the store returns it in
+          // lexicographic key order ("1","10","2"…). Re-sort numerically so the
+          // offline list matches the server's id order. Copy first — the source
+          // list may be unmodifiable.
+          final cached = <PostDto>[...await local.readPosts()]
+            ..sort((a, b) => a.id.compareTo(b.id));
           if (cached.isNotEmpty) {
             return right<Failure, List<Post>>(
               cached.map((dto) => dto.toEntity()).toList(),
