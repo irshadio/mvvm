@@ -65,6 +65,7 @@ lib/
     routing/           Route name constants + rootNavigatorKey.
     state/             ViewState<T>, RemoteStateMixin.
     storage/           SecureStore (tokens), LocalStore (sembast).
+    theme/             AppTheme (MaterialApp theme) + spacing/radius tokens.
     presentation/      ViewStateSwitcher, default state views, extensions.
     utils/             pure helpers/extensions.
   features/<name>/     One feature. MUST NOT import another feature, or app/.
