@@ -35,4 +35,27 @@ void main() {
     await tester.pumpWidget(host(const ViewState<int>.noInternet()));
     expect(find.text('No internet connection'), findsOneWidget);
   });
+
+  testWidgets('loading with previous keeps data visible (no spinner)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(host(const ViewState<int>.loading(previous: 7)));
+    expect(find.text('value 7'), findsOneWidget);
+    expect(find.byType(CircularProgressIndicator), findsNothing);
+  });
+
+  testWidgets('error with previous keeps data visible (no error view)', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      host(
+        const ViewState<int>.error(
+          Failure.unexpected(message: 'boom'),
+          previous: 7,
+        ),
+      ),
+    );
+    expect(find.text('value 7'), findsOneWidget);
+    expect(find.text('boom'), findsNothing);
+  });
 }

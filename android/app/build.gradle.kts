@@ -32,6 +32,29 @@ android {
             signingConfig = signingConfigs.getByName("debug")
         }
     }
+
+    // Build flavours (dev / staging / prod). Each gets a distinct
+    // applicationId so they install side by side on one device. Pair with the
+    // matching entrypoint, e.g.:
+    //   flutter run --flavor dev -t lib/main_dev.dart --dart-define=APP_ENV=dev
+    // See docs/FLAVORS.md. NOTE: once flavours exist, a bare `flutter run`
+    // (no --flavor) is rejected by the Flutter tool — always pass --flavor.
+    flavorDimensions += "env"
+    productFlavors {
+        create("dev") {
+            dimension = "env"
+            applicationIdSuffix = ".dev"
+            versionNameSuffix = "-dev"
+        }
+        create("staging") {
+            dimension = "env"
+            applicationIdSuffix = ".staging"
+            versionNameSuffix = "-staging"
+        }
+        create("prod") {
+            dimension = "env"
+        }
+    }
 }
 
 kotlin {

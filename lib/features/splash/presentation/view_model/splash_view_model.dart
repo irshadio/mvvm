@@ -24,10 +24,12 @@ class SplashViewModel extends _$SplashViewModel with RemoteStateMixin<String> {
     // Small minimum duration so the splash does not visibly flash.
     await Future<void>.delayed(const Duration(milliseconds: 600));
 
-    // TEMPLATE: when an auth feature exists, read the session here and return
-    // the login route when there is no valid token, e.g.:
+    // TEMPLATE: there is no auth feature or `Routes.login` yet. When you add
+    // one, add the route to `app_routes.dart` + `route_generator.dart`, then
+    // gate on the session here, e.g.:
     //   final token = await ref.read(secureStoreProvider).readAccessToken();
     //   if (token == null || token.isEmpty) return right(Routes.login);
+    // Until then this always resolves to home.
     return right<Failure, String>(Routes.home);
   }
 }

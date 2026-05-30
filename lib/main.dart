@@ -1,19 +1,10 @@
-import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:mvvm/app/app.dart';
-import 'package:mvvm/core/bootstrap/bootstrap.dart';
-import 'package:mvvm/features/posts/posts_overrides.dart';
+import 'package:mvvm/app/run_app.dart';
+import 'package:mvvm/core/config/app_environment.dart';
 
-/// Composition root. Builds the core contract overrides (which opens async
-/// infrastructure such as the database), aggregates each feature's overrides,
-/// and starts the app inside a single [ProviderScope].
-Future<void> main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-
-  final overrides = [
-    ...await buildCoreOverrides(),
-    ...postsOverrides,
-  ];
-
-  runApp(ProviderScope(overrides: overrides, child: const App()));
-}
+/// Default (flavour-less) entrypoint. Resolves the flavour from the `APP_ENV`
+/// dart-define (default: `dev`) and delegates to the shared [runMvvmApp].
+///
+/// For a specific Android/iOS flavour use the dedicated entrypoints —
+/// `lib/main_dev.dart`, `lib/main_staging.dart`, `lib/main_prod.dart` — which
+/// pair with `--flavor`. See `docs/FLAVORS.md`.
+void main() => runMvvmApp(AppEnvironment.fromEnv());

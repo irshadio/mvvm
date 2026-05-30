@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:mvvm/core/presentation/extensions/context_extensions.dart';
+import 'package:mvvm/core/presentation/extensions/ref_extensions.dart';
 import 'package:mvvm/core/presentation/view_ready_mixin.dart';
 import 'package:mvvm/core/presentation/view_state_switcher.dart';
 import 'package:mvvm/core/routing/app_routes.dart';
@@ -24,6 +25,8 @@ class _PostsViewState extends ConsumerState<PostsView>
 
   @override
   Widget build(BuildContext context) {
+    // Refresh failures keep the list on screen; surface them as a toast.
+    ref.listenRefreshFailures(postsViewModelProvider, context);
     final state = ref.watch(postsViewModelProvider);
     return Scaffold(
       appBar: AppBar(title: const Text('Posts')),

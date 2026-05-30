@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mvvm/app/app.dart';
 import 'package:mvvm/core/error/failure.dart';
+import 'package:mvvm/core/network/connectivity.dart';
 import 'package:mvvm/features/posts/domain/entities/post.dart';
 import 'package:mvvm/features/posts/domain/repositories/post_repository.dart';
 
@@ -32,6 +33,10 @@ void main() {
       ProviderScope(
         overrides: [
           postRepositoryProvider.overrideWith((ref) => _FakePostRepository()),
+          // Finite stream: no DNS probes, no pending periodic timer in tests.
+          connectivityStatusProvider.overrideWith(
+            (ref) => Stream<bool>.value(true),
+          ),
         ],
         child: const App(),
       ),

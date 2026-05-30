@@ -27,7 +27,9 @@ class _SplashViewState extends ConsumerState<SplashView>
     ref.listen<ViewState<String>>(splashViewModelProvider, (previous, next) {
       final destination = switch (next) {
         ViewData<String>(:final value) => value,
-        ViewError<String>() => Routes.home, // fail-open to home
+        // Fail-open to home on any failure, including offline, so we never
+        // strand the user on the splash screen.
+        ViewError<String>() || ViewNoInternet<String>() => Routes.home,
         _ => null,
       };
       if (destination != null) {

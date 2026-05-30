@@ -11,7 +11,9 @@ Future<void> main() async {
 
   final normalized = path.replaceAll(r'\', '/');
   final isSource = RegExp(r'/(lib|test)/.*\.dart$').hasMatch(normalized);
-  final isGenerated = RegExp(r'\.(g|freezed|mocks)\.dart$').hasMatch(normalized);
+  final isGenerated = RegExp(
+    r'\.(g|freezed|mocks)\.dart$',
+  ).hasMatch(normalized);
   if (!isSource || isGenerated) return;
 
   final file = File(path);

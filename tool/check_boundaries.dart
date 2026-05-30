@@ -15,10 +15,9 @@ import 'dart:io';
 /// composition layer.
 void main() {
   final violations = <String>[];
-  final files = Directory('lib')
-      .listSync(recursive: true)
-      .whereType<File>()
-      .where(_isHandwrittenDart);
+  final files = Directory(
+    'lib',
+  ).listSync(recursive: true).whereType<File>().where(_isHandwrittenDart);
 
   for (final file in files) {
     final fromPath = file.path.replaceAll(r'\', '/');

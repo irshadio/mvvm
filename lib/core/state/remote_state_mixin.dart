@@ -32,18 +32,24 @@ import 'package:riverpod_annotation/riverpod_annotation.dart';
 /// `test/core/remote_state_mixin_test.dart`; if it fails, re-read the generated
 /// base class and update the `on` clause here only.
 mixin RemoteStateMixin<T> on $Notifier<ViewState<T>> {
-  /// Sets `loading`, awaits [request], then maps the result:
-  /// `NoConnectionFailure -> noInternet`, any other `Failure -> error`,
-  /// success `-> data`.
+  /// Snapshots the current data, sets `loading(previous:)`, awaits [request],
+  /// then — if still mounted — maps the result: `NoConnectionFailure ->
+  /// noInternet`, any other `Failure -> error`, success `-> data`. The carried
+  /// `previous` keeps the last data visible across a refresh and a failed
+  /// refresh (see `ViewState`).
   Future<void> runRequest(
     Future<Either<Failure, T>> Function() request,
   ) async {
-    state = ViewState<T>.loading();
+    final previous = state.dataOrNull;
+    state = ViewState<T>.loading(previous: previous);
     final result = await request();
+    // The provider may have been disposed (e.g. the View was popped) while the
+    // request was in flight; assigning `state` after that would throw.
+    if (!ref.mounted) return;
     state = result.fold(
       (failure) => switch (failure) {
-        NoConnectionFailure() => ViewState<T>.noInternet(),
-        _ => ViewState<T>.error(failure),
+        NoConnectionFailure() => ViewState<T>.noInternet(previous: previous),
+        _ => ViewState<T>.error(failure, previous: previous),
       },
       ViewState<T>.data,
     );

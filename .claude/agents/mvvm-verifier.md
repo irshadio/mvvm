@@ -17,7 +17,10 @@ Run `git diff dev...HEAD` (or against the base branch) and check, citing file:li
 - Pattern matching uses Dart 3 `switch` — never `.when` / `.map` / `.maybeWhen`.
 - Every contract is an `abstract interface class` + `Impl` + a throwing `@riverpod` provider + an override in `<feature>_overrides.dart` that is registered in `lib/main.dart`.
 - `$Notifier` is named ONLY in `core/state/remote_state_mixin.dart`.
-- ViewModels are `@riverpod` + `RemoteStateMixin`; state is `ViewState<T>`.
+- ViewModels are `@riverpod` + `RemoteStateMixin`; state is `ViewState<T>`. Each
+  data View calls `ref.listenRefreshFailures(<provider>, context)` in `build`
+  (a failed refresh keeps stale data, so the error must be surfaced — CLAUDE.md
+  §3). Never hand-write `ViewState.loading()` without carrying `previous`.
 - Imports are `package:mvvm/…` (no relative); no cross-feature imports; `core/` imports neither `features/` nor `app/`.
 - NO file under `presentation/view/**` was modified (the UI is the developer's). If the work needs a UI change, it must be listed as a follow-up, not made.
 - Repositories return `Future<Either<Failure, T>>`; transport failures mapped via `failure_mapper`.

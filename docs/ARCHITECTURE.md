@@ -68,7 +68,7 @@ change.
 | --- | --- |
 | **Riverpod 3 + `riverpod_generator` Notifiers as ViewModels** | Compile-time-safe DI/state; codegen removes provider boilerplate. ([riverpod.dev](https://riverpod.dev/docs/whats_new)) |
 | **`RemoteStateMixin` `on $Notifier`** | The api→data→state machine is shared via a mixin (a requirement). A mixin only attaches to a generated Notifier through the internal `$Notifier`; the public `Notifier` base does not match generated output — verified empirically on the installed toolchain. The dependency on the "do not use" `$Notifier` is **quarantined to one file** and guarded by a test. ([riverpod#3546](https://github.com/rrousselGit/riverpod/issues/3546)) |
-| **Custom `ViewState<T>` over `AsyncValue`** | Riverpod 3's `AsyncValue` is sealed but has exactly three cases (data/loading/error); it cannot express `idle` or `noInternet` as first-class states. A Freezed sealed union can. ([AsyncValue docs](https://pub.dev/documentation/riverpod/latest/riverpod/AsyncValue-class.html)) |
+| **Custom `ViewState<T>` over `AsyncValue`** | Riverpod 3's `AsyncValue` is sealed but has exactly three cases (data/loading/error); it cannot express `idle` or `noInternet` as first-class states. A Freezed sealed union can. Like `AsyncValue.copyWithPrevious`, `loading`/`error`/`noInternet` carry the last data as `previous`, so a refresh never blanks the screen. ([AsyncValue docs](https://pub.dev/documentation/riverpod/latest/riverpod/AsyncValue-class.html)) |
 | **Dart 3 `switch`, not `.when`/`.map`** | Freezed 3 made the generated pattern-matching helpers legacy/discouraged in favour of native pattern matching. ([freezed](https://pub.dev/packages/freezed)) |
 | **fpdart `Either<Failure, T>`** | Functional error handling without exceptions across layers; richer than `remote_client`'s minimal `Either`, and decoupled from the transport package. |
 | **Abstract contracts + `ProviderScope` overrides (composition root)** | Every contract is swappable/mockable; all wiring is readable in one place (`bootstrap` + per-feature override lists). |
@@ -88,7 +88,9 @@ change.
 | Local DB | `sembast` |
 | Secrets | `flutter_secure_storage` |
 | Env config | `envied` |
-| Lints | `very_good_analysis` + `tool/check_boundaries.dart` |
+| Observability | `dart:developer` (`AppLogger`) + vendor-agnostic `ErrorReporter` |
+| Flavours | per-flavour entrypoints + `AppEnvironment` (+ Android `productFlavors`) |
+| Lints | `very_good_analysis` + `tool/check_boundaries.dart` + `tool/check_loc.dart` |
 
 ## Reference feature
 

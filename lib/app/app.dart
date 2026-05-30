@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:mvvm/app/route_generator.dart';
+import 'package:mvvm/core/presentation/widgets/connectivity_banner.dart';
 import 'package:mvvm/core/routing/app_routes.dart';
 
 /// Root application widget: Navigator 1.0 driven by a central route generator,
@@ -17,6 +18,16 @@ class App extends StatelessWidget {
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.indigo),
         useMaterial3: true,
+      ),
+      // Overlay the global offline banner above every route.
+      builder: (context, child) => Stack(
+        children: <Widget>[
+          ?child,
+          const Align(
+            alignment: Alignment.bottomCenter,
+            child: ConnectivityBanner(),
+          ),
+        ],
       ),
     );
   }

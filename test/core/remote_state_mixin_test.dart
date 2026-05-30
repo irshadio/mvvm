@@ -64,4 +64,13 @@ void main() {
       const ViewState<int>.error(failure),
     );
   });
+
+  test('a failed refresh retains the previous data', () async {
+    final notifier = container.read(probeViewModelProvider.notifier);
+    await notifier.run(right<Failure, int>(42)); // -> data(42)
+    await notifier.run(left<Failure, int>(const Failure.noConnection()));
+    final state = container.read(probeViewModelProvider);
+    expect(state, isA<ViewNoInternet<int>>());
+    expect(state.dataOrNull, 42);
+  });
 }

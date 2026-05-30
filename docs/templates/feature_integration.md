@@ -28,7 +28,7 @@ part '__feature__.freezed.dart';
 @freezed
 abstract class __Feature__ with _$__Feature__ {
   const factory __Feature__({required int id, required String name}) =
-      _$Feature$;
+      ___Feature__;
 }
 ```
 
@@ -62,7 +62,7 @@ part '__feature___dto.g.dart';
 @freezed
 abstract class __Feature__Dto with _$__Feature__Dto {
   const factory __Feature__Dto({required int id, required String name}) =
-      _$Feature$Dto;
+      ___Feature__Dto;
   factory __Feature__Dto.fromJson(Map<String, dynamic> json) =>
       _$__Feature__DtoFromJson(json);
 }
@@ -176,7 +176,7 @@ final List<Override> __feature__Overrides = <Override>[
 ## 8. Wiring (edit existing files)
 - `lib/core/routing/app_routes.dart`: add `static const String __feature__ = '/__feature__';`.
 - `lib/app/route_generator.dart`: add a `case Routes.__feature__:` returning the developer's View.
-- `lib/main.dart`: add `...__feature__Overrides` to the `overrides` list.
+- `lib/app/run_app.dart`: add `...__feature__Overrides` to the `overrides` list.
 
 ## 9. The View (developer-owned — do NOT create)
 The View is a `ConsumerStatefulWidget` with `ViewReadyMixin`, watching

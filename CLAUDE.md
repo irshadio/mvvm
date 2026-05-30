@@ -51,9 +51,11 @@ URL, not a secret). For real secrets see §8.
 
 ```
 lib/
-  main.dart            Composition root: builds overrides, runs ProviderScope.
+  main.dart            Default entrypoint -> runMvvmApp (+ main_<flavour>.dart).
   app/                 Top layer. MAY import anything (core + features).
     app.dart           MaterialApp (Navigator 1.0, onGenerateRoute).
+    run_app.dart       Composition root: global error handlers, builds the
+                       core+feature overrides, runs ProviderScope.
     route_generator.dart   Maps route names -> feature views.
   core/                Generic infrastructure. MUST NOT import app/ or features/.
     bootstrap/         buildCoreOverrides(): the composition root for core.
@@ -89,12 +91,18 @@ lib/
 Every ViewModel exposes a single sealed union, `ViewState<T>` (`core/state/`):
 
 ```dart
-ViewState.idle()       // nothing requested yet
-ViewState.loading()    // request in flight
-ViewState.data(T)      // success
-ViewState.error(Failure)
-ViewState.noInternet() // first-class — AsyncValue cannot express this
+ViewState.idle()                        // nothing requested yet
+ViewState.loading({T? previous})        // in flight; carries last data
+ViewState.data(T)                       // success
+ViewState.error(Failure, {T? previous}) // failure; carries last data
+ViewState.noInternet({T? previous})     // first-class — AsyncValue can't model
 ```
+
+`loading`/`error`/`noInternet` carry the last loaded data as `previous` so a
+**refresh** is non-destructive: the switcher keeps showing data while reloading
+and after a failed reload, instead of blanking to a spinner. `RemoteStateMixin`
+fills `previous` automatically; read the current data anywhere with
+`state.dataOrNull`.
 
 Render it with `ViewStateSwitcher<T>` (Dart 3 `switch` inside). Only `onData` is
 required; the rest fall back to default views:
@@ -109,6 +117,14 @@ ViewStateSwitcher<List<Post>>(
 
 Do **not** use Riverpod's `AsyncValue` for screen state — it only models
 data/loading/error and cannot express `idle`/`noInternet`.
+
+Because a failed *refresh* keeps the stale data on screen (the switcher does not
+show the error view when `previous` exists), every data View MUST also surface
+those failures with one line in `build`, or they are swallowed silently:
+
+```dart
+ref.listenRefreshFailures(postsViewModelProvider, context); // -> toast on refresh error
+```
 
 ---
 
@@ -137,9 +153,12 @@ class FooViewModel extends _$FooViewModel with RemoteStateMixin<List<Foo>> {
 }
 ```
 
-`runRequest(Future<Either<Failure, T>> Function())` sets `loading`, then maps the
-result: `NoConnectionFailure → noInternet`, any other `Failure → error`,
-success → `data`. You never write that boilerplate.
+`runRequest(Future<Either<Failure, T>> Function())` snapshots the current data,
+sets `loading(previous:)`, awaits, and — if the notifier is still mounted
+(`ref.mounted`, so a request finishing after the View is popped does not throw)
+— maps the result: `NoConnectionFailure → noInternet`, any other
+`Failure → error`, success → `data`, carrying `previous` into the failure
+states. You never write that boilerplate.
 
 > ⚠️ **`$Notifier` quarantine.** `RemoteStateMixin` is declared
 > `on $Notifier<ViewState<T>>`. `$Notifier` is an internal `riverpod_generator`
@@ -158,7 +177,13 @@ class _FooViewState extends ConsumerState<FooView>
     with ViewReadyMixin<FooView> {
   @override
   void onReady() => ref.read(fooViewModelProvider.notifier).load();
-  // ...
+
+  @override
+  Widget build(BuildContext context) {
+    ref.listenRefreshFailures(fooViewModelProvider, context); // §3 — required
+    final state = ref.watch(fooViewModelProvider);
+    return ViewStateSwitcher<List<Foo>>(state: state, onData: ...);
+  }
 }
 ```
 
@@ -198,15 +223,24 @@ final List<Override> fooOverrides = <Override>[
 ```
 
 ```dart
-// lib/main.dart — aggregate core + every feature
-final overrides = [...await buildCoreOverrides(), ...fooOverrides];
+// lib/app/run_app.dart — aggregate core + every feature (shared by all flavours)
+final overrides = [
+  ...await buildCoreOverrides(env: env, logger: logger, reporter: reporter),
+  ...fooOverrides,
+];
 runApp(ProviderScope(overrides: overrides, child: const App()));
 ```
 
-- Core contracts (`SecureStore`, `LocalStore`, `RemoteClient`, `TokenProvider`,
-  `UnauthorizedHandler`, `ConnectivityService`) are bound in
-  `core/bootstrap/bootstrap.dart` (`buildCoreOverrides`, which also opens the
-  sembast DB once).
+- The aggregation lives in `lib/app/run_app.dart` (`runMvvmApp(env)`), called by
+  each flavour entrypoint (`main.dart`, `main_dev.dart`, …). It also installs the
+  global error handlers. It is in `app/` — not `core/` — because it references
+  `App` (core may never import app). See §8 (flavours) and `docs/FLAVORS.md`.
+- Core contracts (`AppLogger`, `ErrorReporter`, `SecureStore`, `LocalStore`,
+  `RemoteClient`, `TokenProvider`, `UnauthorizedHandler`, `ConnectivityService`)
+  are bound in `core/bootstrap/bootstrap.dart` (`buildCoreOverrides`, which also
+  opens the sembast DB once). It takes the active `AppEnvironment` plus the
+  `AppLogger`/`ErrorReporter` instances (created in `run_app.dart` so the global
+  handlers share them).
 - `Override` is exported by `riverpod_annotation`, **not** `flutter_riverpod`.
 - Override closures compose other contracts via `ref.watch(otherProvider)`.
 
@@ -249,11 +283,23 @@ runApp(ProviderScope(overrides: overrides, child: const App()));
   records). DTOs serialise via `toJson`/`fromJson`.
 - **Connectivity**: `connectivityServiceProvider` uses `remote_client`'s
   DNS-probe `ConnectivityServiceImpl` (real reachability). `connectivityStatus`
-  is a polled `Stream<bool>` for a global offline banner.
+  is a polled `Stream<bool>`; the global offline banner (`ConnectivityBanner`,
+  mounted via `MaterialApp.builder` in `app.dart`) watches it.
 - **Env**: `core/config/app_config.dart` is generated by `envied` from `.env`.
   Add a field as `@EnviedField(varName: 'X')` and reference `_AppConfig.x`. For
   secrets use `@EnviedField(obfuscate: true)`, then `git rm --cached .env` and
   gitignore it.
+- **Observability**: `AppLogger` (`core/logging`) for structured logs (never
+  `print`); `ErrorReporter` (`core/error/error_reporter.dart`) is the crash sink
+  wired to `FlutterError.onError` + `PlatformDispatcher.onError` in
+  `run_app.dart` — swap `LoggingErrorReporter` for a Sentry/Crashlytics impl
+  there. Both are abstract contracts read via `ref.watch`.
+- **Flavours**: `dev`/`staging`/`prod` via per-flavour entrypoints
+  (`main_<flavour>.dart`) + `AppEnvironment`/`EnvConfig` (`core/config`). Android
+  `productFlavors` are wired; iOS schemes are documented. **`docs/FLAVORS.md`.**
+- **Toolchain note**: `freezed` / `riverpod_generator` are pinned to *prerelease*
+  (`-dev`) versions (a deliberate choice). After any bump, re-run the full gate —
+  especially the `$Notifier` guard test (§4).
 
 ---
 
@@ -264,7 +310,12 @@ runApp(ProviderScope(overrides: overrides, child: const App()));
 3. `flutter analyze` → **No issues found** (very_good_analysis is strict:
    package imports, 80-col, trailing commas, no `print`, etc.).
 4. `dart run tool/check_boundaries.dart` → **OK**.
-5. `flutter test` green.
+5. `dart run tool/check_loc.dart` → every file ≤ 200 lines.
+6. `flutter test` green.
+
+`dart run tool/gate.dart` runs steps 1 and 3–6 in order; the commit hook and
+GitHub Actions (`.github/workflows/ci.yml`) both run it, so a green PR satisfies
+every gate.
 
 ---
 
@@ -291,7 +342,7 @@ Mirror `lib/features/posts/`. For a feature `bar` with entity `Bar`:
 8. **View(s)** — `presentation/view/bar_view.dart`: `ConsumerStatefulWidget` +
    `ViewReadyMixin`, render via `ViewStateSwitcher`.
 9. **Overrides** — `bar_overrides.dart`: bind every contract from steps 2/4/5/6.
-10. **Wire** — add `...barOverrides` to `main.dart`; add routes to
+10. **Wire** — add `...barOverrides` to `app/run_app.dart`; add routes to
     `app/route_generator.dart` + `core/routing/app_routes.dart`.
 11. **Generate + verify** — `dart run build_runner build`, then run all of §9.
 12. **Commit** — see §11.

@@ -55,13 +55,26 @@ class ViewStateSwitcher<T> extends StatelessWidget {
   Widget build(BuildContext context) {
     return switch (state) {
       ViewIdle<T>() => onIdle?.call(context) ?? const SizedBox.shrink(),
-      ViewLoading<T>() => onLoading?.call(context) ?? const AppLoadingView(),
+      // A refresh keeps the existing data on screen (the View shows its own
+      // refresh affordance); only a *first* load with no data shows the loader.
+      ViewLoading<T>(:final previous) =>
+        previous != null
+            ? onData(previous)
+            : (onLoading?.call(context) ?? const AppLoadingView()),
       ViewData<T>(:final value) => onData(value),
-      ViewError<T>(:final failure) =>
-        onError?.call(context, failure) ??
-            AppErrorView(failure: failure, onRetry: onRetry),
-      ViewNoInternet<T>() =>
-        onNoInternet?.call(context) ?? AppNoInternetView(onRetry: onRetry),
+      // A failed *refresh* keeps the stale data visible — surface the error via
+      // a toast (`WidgetRefX.listenRefreshFailures`). A failed *first* load
+      // (no data) shows the full error view.
+      ViewError<T>(:final failure, :final previous) =>
+        previous != null
+            ? onData(previous)
+            : (onError?.call(context, failure) ??
+                  AppErrorView(failure: failure, onRetry: onRetry)),
+      ViewNoInternet<T>(:final previous) =>
+        previous != null
+            ? onData(previous)
+            : (onNoInternet?.call(context) ??
+                  AppNoInternetView(onRetry: onRetry)),
     };
   }
 }
