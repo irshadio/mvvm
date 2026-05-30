@@ -44,4 +44,12 @@ jobs:
         run: dart run tool/check_loc.dart
 
       - name: Test
-        run: flutter test
+        run: flutter test --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-lcov
+          path: coverage/lcov.info
+          if-no-files-found: warn

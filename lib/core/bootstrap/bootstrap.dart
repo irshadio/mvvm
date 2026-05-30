@@ -50,7 +50,19 @@ Future<List<Override>> buildCoreOverrides({
 
     // --- Storage ---
     secureStoreProvider.overrideWith(
-      (ref) => SecureStoreImpl(const FlutterSecureStorage()),
+      (ref) => SecureStoreImpl(
+        // Hardened secure storage. iOS: tokens are accessible only after the
+        // first unlock and are bound to THIS device (not synced to iCloud
+        // Keychain or restored to a new device). Android: v10's default already
+        // uses AES-GCM data encryption with RSA-OAEP key wrapping in the
+        // KeyStore (the old `encryptedSharedPreferences` flag is deprecated and
+        // ignored), so no extra Android options are needed.
+        const FlutterSecureStorage(
+          iOptions: IOSOptions(
+            accessibility: KeychainAccessibility.first_unlock_this_device,
+          ),
+        ),
+      ),
     ),
     localStoreProvider.overrideWith((ref) => LocalStoreImpl(db)),
 
