@@ -5,6 +5,7 @@ import 'package:mvvm/app/app.dart';
 import 'package:mvvm/core/bootstrap/bootstrap.dart';
 import 'package:mvvm/core/config/app_environment.dart';
 import 'package:mvvm/core/error/error_reporter.dart';
+import 'package:mvvm/core/error/error_reporting_observer.dart';
 import 'package:mvvm/core/logging/app_logger.dart';
 import 'package:mvvm/features/posts/posts_overrides.dart';
 
@@ -45,5 +46,13 @@ Future<void> runMvvmApp(AppEnvironment env) async {
     ...postsOverrides,
   ];
 
-  runApp(ProviderScope(overrides: overrides, child: const App()));
+  runApp(
+    ProviderScope(
+      // Reports handled domain failures (ViewState.error /
+      // SubmissionState.failure) that never reach the global error handlers.
+      observers: [ErrorReportingObserver(reporter)],
+      overrides: overrides,
+      child: const App(),
+    ),
+  );
 }
