@@ -1,0 +1,13 @@
+# Release signing config for the Android app. COPY to `android/key.properties`
+# (which is gitignored) and fill in real values for a store build. Never commit
+# the real file or the keystore.
+#
+# Generate a keystore once:
+#   keytool -genkey -v -keystore upload-keystore.jks -keyalg RSA -keysize 2048 \
+#     -validity 10000 -alias upload
+#
+# storeFile is resolved relative to the android/app module directory.
+storePassword=changeme
+keyPassword=changeme
+keyAlias=upload
+storeFile=upload-keystore.jks

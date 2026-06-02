@@ -1,4 +1,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Required for the HTTP API client. Declared in the MAIN manifest so the
+         merged RELEASE build has it too (the debug/profile manifests carry their
+         own copy for hot-reload tooling). -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="mvvm"
         android:name="${applicationName}"
