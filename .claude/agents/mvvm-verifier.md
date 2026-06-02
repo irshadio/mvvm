@@ -15,7 +15,7 @@ build_runner · `flutter analyze` (must be "No issues found") · `dart run tool/
 Run `git diff dev...HEAD` (or against the base branch) and check, citing file:line for every violation:
 - `rc.*` (remote_client) types appear ONLY inside `data/`.
 - Pattern matching uses Dart 3 `switch` — never `.when` / `.map` / `.maybeWhen`.
-- Every contract is an `abstract interface class` + `Impl` + a throwing `@riverpod` provider + an override in `<feature>_overrides.dart` that is registered in `lib/main.dart`.
+- Every contract is an `abstract interface class` + `Impl` + a throwing `@riverpod` provider + an override in `<feature>_overrides.dart` that is registered in `lib/app/run_app.dart`.
 - `$Notifier` is named ONLY in `core/state/remote_state_mixin.dart` or
   `core/state/mutation_state_mixin.dart`.
 - ViewModels are `@riverpod` + `RemoteStateMixin`; state is `ViewState<T>`. Each
