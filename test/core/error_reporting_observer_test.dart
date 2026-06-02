@@ -53,9 +53,13 @@ void main() {
 
   group('reads (ViewState.error)', () {
     test('a server failure is reported', () async {
-      await container.read(readProbeProvider.notifier).run(
-        left<Failure, int>(const Failure.server(statusCode: 500, message: 'x')),
-      );
+      await container
+          .read(readProbeProvider.notifier)
+          .run(
+            left<Failure, int>(
+              const Failure.server(statusCode: 500, message: 'x'),
+            ),
+          );
       expect(reporter.reported, [
         const Failure.server(statusCode: 500, message: 'x'),
       ]);

@@ -47,12 +47,14 @@ void main() {
     final container = await pumpHost(tester);
     expect(find.byType(SnackBar), findsNothing);
 
-    container.read(_probeProvider.notifier).emit(
-      const ViewState<int>.error(
-        Failure.unexpected(message: 'refresh boom'),
-        previous: 7,
-      ),
-    );
+    container
+        .read(_probeProvider.notifier)
+        .emit(
+          const ViewState<int>.error(
+            Failure.unexpected(message: 'refresh boom'),
+            previous: 7,
+          ),
+        );
     await tester.pump(); // run the listener
     await tester.pump(); // animate the snackbar in
 
@@ -64,9 +66,11 @@ void main() {
   ) async {
     final container = await pumpHost(tester);
 
-    container.read(_probeProvider.notifier).emit(
-      const ViewState<int>.error(Failure.unexpected(message: 'first boom')),
-    );
+    container
+        .read(_probeProvider.notifier)
+        .emit(
+          const ViewState<int>.error(Failure.unexpected(message: 'first boom')),
+        );
     await tester.pump();
     await tester.pump();
 
