@@ -29,6 +29,10 @@ environment:
 # versions available, run `flutter pub outdated`.
 dependencies:
   cupertino_icons: ^1.0.8
+  # Direct dependency for the idempotent retry policy's typed DioException
+  # handling (core/network/idempotent_retry_policy.dart). Already transitive via
+  # remote_client; pinned here so the import is declared.
+  dio: ^5.9.2
   envied: ^1.3.5
   flutter:
     sdk: flutter

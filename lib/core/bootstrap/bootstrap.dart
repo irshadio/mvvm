@@ -5,6 +5,7 @@ import 'package:mvvm/core/config/app_environment.dart';
 import 'package:mvvm/core/error/error_reporter.dart';
 import 'package:mvvm/core/logging/app_logger.dart';
 import 'package:mvvm/core/network/connectivity.dart';
+import 'package:mvvm/core/network/idempotent_retry_policy.dart';
 import 'package:mvvm/core/network/remote_client_provider.dart';
 import 'package:mvvm/core/network/token_provider.dart';
 import 'package:mvvm/core/network/unauthorized_handler.dart';
@@ -87,7 +88,10 @@ Future<List<Override>> buildCoreOverrides({
             tokenProvider: ref.watch(tokenProviderProvider),
             unauthorizedHandler: ref.watch(unauthorizedHandlerProvider),
           )
-          .withRetry(RetryPolicy.defaultPolicy)
+          // Idempotent-only retry: reads stay resilient to transient failures,
+          // but POST/PATCH are never retried (a retried write can duplicate a
+          // record the server already created). See idempotent_retry_policy.
+          .withRetry(idempotentRetryPolicy)
           // JSONPlaceholder returns UNWRAPPED JSON (no {success, data}
           // envelope), so parse the body directly. For an API that wraps
           // responses, drop this to use the default DefaultResponseParser.
