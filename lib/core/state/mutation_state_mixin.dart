@@ -40,7 +40,19 @@ mixin MutationStateMixin<T> on $Notifier<SubmissionState<T>> {
     Future<Either<Failure, T>> Function() request,
   ) async {
     state = SubmissionState<T>.inProgress();
-    final result = await request();
+    final Either<Failure, T> result;
+    try {
+      result = await request();
+    } on Object {
+      // A repository/mapping that THROWS (rather than returning a `Left`) must
+      // not strand the form in a permanent `inProgress`. Map any unexpected
+      // throw to a failure; the `ErrorReportingObserver` forwards the resulting
+      // `UnexpectedFailure` to telemetry, so the throw is neither silent nor
+      // invisible.
+      if (!ref.mounted) return;
+      state = SubmissionState<T>.failure(const Failure.unexpected());
+      return;
+    }
     // The provider may have been disposed (e.g. the form was popped) while the
     // request was in flight; assigning `state` after that would throw.
     if (!ref.mounted) return;

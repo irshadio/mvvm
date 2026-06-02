@@ -19,6 +19,9 @@ class ProbeMutation extends _$ProbeMutation with MutationStateMixin<int> {
 
   Future<void> run(Either<Failure, int> result) =>
       runMutation(() async => result);
+
+  Future<void> runThrowing() =>
+      runMutation(() async => throw StateError('boom'));
 }
 
 void main() {
@@ -53,5 +56,14 @@ void main() {
       container.read(probeMutationProvider),
       const SubmissionState<int>.failure(failure),
     );
+  });
+
+  test('a THROWN error maps to SubmissionState.failure (no hang)', () async {
+    await container.read(probeMutationProvider.notifier).runThrowing();
+    final state = container.read(probeMutationProvider);
+    // It resolves to a failure — NOT stuck on inProgress — carrying the generic
+    // UnexpectedFailure (reported via ErrorReportingObserver).
+    expect(state, isA<SubmissionFailure<int>>());
+    expect((state as SubmissionFailure<int>).failure, isA<UnexpectedFailure>());
   });
 }

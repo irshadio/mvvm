@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
 import 'package:mvvm/core/error/failure.dart';
@@ -19,6 +21,12 @@ class ProbeViewModel extends _$ProbeViewModel with RemoteStateMixin<int> {
 
   Future<void> run(Either<Failure, int> result) =>
       runRequest(() async => result);
+
+  Future<void> runThrowing() =>
+      runRequest(() async => throw StateError('boom'));
+
+  Future<void> runFuture(Future<Either<Failure, int>> future) =>
+      runRequest(() => future);
 }
 
 void main() {
@@ -72,5 +80,47 @@ void main() {
     final state = container.read(probeViewModelProvider);
     expect(state, isA<ViewNoInternet<int>>());
     expect(state.dataOrNull, 42);
+  });
+
+  test('a THROWN error maps to ViewState.error (no hang)', () async {
+    await container.read(probeViewModelProvider.notifier).runThrowing();
+    final state = container.read(probeViewModelProvider);
+    // It resolves to an error state — NOT stuck on loading — and the failure is
+    // the generic UnexpectedFailure (reported via ErrorReportingObserver).
+    expect(state, isA<ViewError<int>>());
+    expect((state as ViewError<int>).failure, isA<UnexpectedFailure>());
+  });
+
+  test('a thrown error during refresh retains the previous data', () async {
+    final notifier = container.read(probeViewModelProvider.notifier);
+    await notifier.run(right<Failure, int>(42)); // -> data(42)
+    await notifier.runThrowing();
+    final state = container.read(probeViewModelProvider);
+    expect(state, isA<ViewError<int>>());
+    expect(state.dataOrNull, 42);
+  });
+
+  test('a superseded (older) request never clobbers a newer result', () async {
+    final notifier = container.read(probeViewModelProvider.notifier);
+    final older = Completer<Either<Failure, int>>();
+    final newer = Completer<Either<Failure, int>>();
+
+    final olderRun = notifier.runFuture(older.future); // request 1, in flight
+    final newerRun = notifier.runFuture(newer.future); // request 2 supersedes 1
+
+    newer.complete(right<Failure, int>(2)); // the newer request resolves first
+    await newerRun;
+    expect(
+      container.read(probeViewModelProvider),
+      const ViewState<int>.data(2),
+    );
+
+    older.complete(right<Failure, int>(1)); // stale result lands later...
+    await olderRun;
+    // ...and is dropped: the newer data still stands.
+    expect(
+      container.read(probeViewModelProvider),
+      const ViewState<int>.data(2),
+    );
   });
 }
