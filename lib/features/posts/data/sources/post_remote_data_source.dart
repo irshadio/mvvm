@@ -36,7 +36,20 @@ class PostRemoteDataSourceImpl implements PostRemoteDataSource {
     );
     return result.fold<Either<Failure, List<PostDto>>>(
       (failure) => left(mapRemoteFailure(failure)),
-      (response) => right(response.data ?? <PostDto>[]),
+      (response) {
+        // `remote_client`'s parser SWALLOWS a throwing `fromJson` and yields
+        // `data == null` on a 2xx, so null here means "undecodable body", NOT
+        // "empty list" (a genuinely empty page decodes to a non-null `[]`).
+        // Surface it as a failure rather than masking a broken response as a
+        // successful empty list.
+        final data = response.data;
+        if (data == null) {
+          return left(
+            const Failure.unexpected(message: 'Failed to decode response'),
+          );
+        }
+        return right(data);
+      },
     );
   }
 
