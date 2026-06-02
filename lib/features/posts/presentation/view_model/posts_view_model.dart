@@ -29,8 +29,12 @@ class PostsViewModel extends _$PostsViewModel
   @override
   ViewState<List<Post>> build() => const ViewState.idle();
 
-  /// Loads (or reloads) the first page, resetting pagination.
+  /// Loads (or reloads) the first page, resetting pagination. No-op while a
+  /// request is already in flight: this prevents a pull-to-refresh from racing
+  /// an in-flight `loadMore`, whose page-cursor bookkeeping (`_page`/`_hasMore`)
+  /// would otherwise be applied out of order against a fresh first page.
   Future<void> load() {
+    if (state.isLoading) return Future<void>.value();
     _page = 1;
     _hasMore = true;
     return runRequest(() async {

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:fpdart/fpdart.dart';
@@ -43,6 +45,26 @@ class _PagingRepository implements PostRepository {
   }) => Future<Either<Failure, List<Post>>>.value(
     right<Failure, List<Post>>(pages[page] ?? const <Post>[]),
   );
+
+  @override
+  Future<Either<Failure, Post>> getPost(int id) async =>
+      throw UnimplementedError();
+
+  @override
+  Future<Either<Failure, Post>> createPost(CreatePostInput input) async =>
+      throw UnimplementedError();
+}
+
+/// Counts calls and never completes its futures — lets a test hold the
+/// ViewModel in the `loading` state to exercise the in-flight guards.
+class _CountingHangingRepository implements PostRepository {
+  int calls = 0;
+
+  @override
+  Future<Either<Failure, List<Post>>> getPosts({int page = 1, int limit = 20}) {
+    calls++;
+    return Completer<Either<Failure, List<Post>>>().future; // never completes
+  }
 
   @override
   Future<Either<Failure, Post>> getPost(int id) async =>
@@ -157,5 +179,20 @@ void main() {
 
     expect(container.read(postsViewModelProvider).dataOrNull, hasLength(20));
     expect(notifier.hasMore, isTrue);
+  });
+
+  test('load() is a no-op while a request is already in flight', () async {
+    // Guards against a pull-to-refresh racing an in-flight load — which would
+    // otherwise apply pagination bookkeeping out of order (see load()).
+    final repo = _CountingHangingRepository();
+    final container = containerFor(repo);
+    final notifier = container.read(postsViewModelProvider.notifier);
+
+    unawaited(notifier.load()); // -> loading, hangs
+    unawaited(notifier.load()); // guarded: must NOT issue a second request
+    await Future<void>.value(); // flush microtasks
+
+    expect(repo.calls, 1);
+    expect(container.read(postsViewModelProvider).isLoading, isTrue);
   });
 }
