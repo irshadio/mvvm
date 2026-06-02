@@ -23,7 +23,9 @@ class PostLocalDataSourceImpl implements PostLocalDataSource {
   }
 
   @override
-  Future<void> writePosts(List<PostDto> posts) => _store.writeAll(
+  // Replace, not upsert: the cache is the page-1 snapshot, so a post removed at
+  // the source must not linger offline. See LocalStore.replaceAll.
+  Future<void> writePosts(List<PostDto> posts) => _store.replaceAll(
     _storeName,
     <String, Map<String, Object?>>{
       for (final post in posts) post.id.toString(): post.toJson(),

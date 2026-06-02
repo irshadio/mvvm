@@ -11,10 +11,22 @@ abstract interface class LocalStore {
   Future<Map<String, Object?>?> read(String storeName, String key);
   Future<List<Map<String, Object?>>> readAll(String storeName);
   Future<void> write(String storeName, String key, Map<String, Object?> value);
+
+  /// Upserts a set of records in one transaction (existing records with other
+  /// keys are left untouched). For refreshing a *snapshot* — where records
+  /// removed at the source must not linger — use [replaceAll].
   Future<void> writeAll(
     String storeName,
     Map<String, Map<String, Object?>> entries,
   );
+
+  /// Atomically replaces the ENTIRE contents of [storeName] with [entries]
+  /// (clear + write in a single transaction).
+  Future<void> replaceAll(
+    String storeName,
+    Map<String, Map<String, Object?>> entries,
+  );
+
   Future<void> delete(String storeName, String key);
   Future<void> clear(String storeName);
 }
@@ -46,8 +58,8 @@ class LocalStoreImpl implements LocalStore {
     Map<String, Object?> value,
   ) => _store(storeName).record(key).put(_db, value);
 
-  /// Atomically replaces a set of records (used by repositories to refresh a
-  /// cached collection in one transaction).
+  /// Upserts a set of records in one transaction (keys not in [entries] are
+  /// left as-is). See [replaceAll] for snapshot-style refreshes.
   @override
   Future<void> writeAll(
     String storeName,
@@ -55,6 +67,20 @@ class LocalStoreImpl implements LocalStore {
   ) {
     return _db.transaction((txn) async {
       final store = _store(storeName);
+      for (final entry in entries.entries) {
+        await store.record(entry.key).put(txn, entry.value);
+      }
+    });
+  }
+
+  @override
+  Future<void> replaceAll(
+    String storeName,
+    Map<String, Map<String, Object?>> entries,
+  ) {
+    return _db.transaction((txn) async {
+      final store = _store(storeName);
+      await store.delete(txn); // clear the old snapshot first
       for (final entry in entries.entries) {
         await store.record(entry.key).put(txn, entry.value);
       }
