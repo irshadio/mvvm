@@ -11,6 +11,13 @@ import 'dart:io';
 ///   4. within a feature, domain imports data or presentation, or data
 ///      imports presentation (inner layers stay pure).
 ///
+/// Plus two confinement rules that previously relied only on convention:
+///   5. `remote_client` (rc.*) is imported only by core/** (it owns the client
+///      wiring) or a feature's `data/` layer — never a feature's domain/ or
+///      presentation/ (§6/§12).
+///   6. the quarantined `$Notifier` identifier appears only in core/state/
+///      (§4/§12). Generated *.g.dart that legitimately extends it is excluded.
+///
 /// app/** and the entrypoint (lib/main.dart) may import anything — they are the
 /// composition layer.
 void main() {
@@ -21,10 +28,35 @@ void main() {
 
   for (final file in files) {
     final fromPath = file.path.replaceAll(r'\', '/');
+    var notifierFlagged = false;
     for (final line in file.readAsLinesSync()) {
+      // --- Identifier confinement: `$Notifier` only in core/state/ (§4) ---
+      // The quarantined riverpod_generator base. Generated *.g.dart files
+      // (which legitimately extend it) are excluded by _isHandwrittenDart.
+      if (!notifierFlagged &&
+          line.contains(_notifierToken) &&
+          !_isCoreState(fromPath)) {
+        notifierFlagged = true;
+        violations.add(
+          '  $fromPath\n    names $_notifierToken\n'
+          '    -> $_notifierToken may appear only in core/state/ (§4)',
+        );
+      }
+
       final match = _importPattern.firstMatch(line);
       if (match == null) continue;
       final uri = match.group(1)!;
+
+      // --- Import confinement: remote_client (rc.*) only in a feature's data/
+      // (§6/§12). core/** owns the client wiring (network, bootstrap, the
+      // failure_mapper) and is exempt; the rule bites inside features. ---
+      if (uri.contains(_remoteClientPackage)) {
+        final reason = _remoteClientViolation(fromPath);
+        if (reason != null) {
+          violations.add('  $fromPath\n    imports $uri\n    -> $reason');
+        }
+      }
+
       if (!uri.startsWith(_packagePrefix)) continue;
       final toPath = 'lib/${uri.substring(_packagePrefix.length)}';
       final reason = _violation(fromPath, toPath);
@@ -45,7 +77,23 @@ void main() {
 }
 
 const String _packagePrefix = 'package:mvvm/';
+const String _remoteClientPackage = 'package:remote_client/';
+const String _notifierToken = r'$Notifier';
 final RegExp _importPattern = RegExp(r'''^\s*import\s+['"]([^'"]+)['"]''');
+
+/// `$Notifier` is confined to `lib/core/state/` (the §4 quarantine).
+bool _isCoreState(String path) => path.startsWith('lib/core/state/');
+
+/// remote_client may be imported by core/** and app/** (infrastructure +
+/// composition), and inside a feature ONLY under its `data/` layer. Anywhere
+/// else in a feature (domain/ or presentation/) leaks a transport type past the
+/// boundary.
+String? _remoteClientViolation(String fromPath) {
+  if (_zone(fromPath) != _Zone.feature) return null;
+  if (fromPath.contains('/data/')) return null;
+  return "remote_client (rc.*) may appear only in a feature's data/ layer "
+      '(§6)';
+}
 
 bool _isHandwrittenDart(File file) {
   final path = file.path;
