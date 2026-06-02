@@ -14,24 +14,30 @@ import 'package:mvvm/features/splash/presentation/view/splash_view.dart';
 Route<dynamic> onGenerateRoute(RouteSettings settings) {
   switch (settings.name) {
     case Routes.splash:
-      return _materialRoute(const SplashView(), settings);
+      return _materialRoute<void>(const SplashView(), settings);
     case Routes.home:
-      return _materialRoute(const PostsView(), settings);
+      return _materialRoute<void>(const PostsView(), settings);
     case Routes.postDetail:
       final argument = settings.arguments;
       if (argument is! Post) {
         return _errorRoute('postDetail requires a Post argument', settings);
       }
-      return _materialRoute(PostDetailView(post: argument), settings);
+      return _materialRoute<void>(PostDetailView(post: argument), settings);
     case Routes.createPost:
-      return _materialRoute(const CreatePostView(), settings);
+      // Typed to its return value: callers push `pushNamed<Post>` and the form
+      // pops a `Post`. A `MaterialPageRoute<void>` here makes Navigator's
+      // internal `as Route<Post?>?` cast throw, so the route MUST carry `Post`.
+      return _materialRoute<Post>(const CreatePostView(), settings);
     default:
       return _errorRoute('No route defined for "${settings.name}"', settings);
   }
 }
 
-Route<dynamic> _materialRoute(Widget page, RouteSettings settings) =>
-    MaterialPageRoute<void>(builder: (_) => page, settings: settings);
+/// Builds a typed [MaterialPageRoute]. [T] is the route's *result* type — it
+/// must match the type argument callers use with `pushNamed<T>` / `pop<T>`,
+/// because `Navigator` casts the generated route to `Route<T?>?` on push.
+Route<dynamic> _materialRoute<T>(Widget page, RouteSettings settings) =>
+    MaterialPageRoute<T>(builder: (_) => page, settings: settings);
 
 Route<dynamic> _errorRoute(String message, RouteSettings settings) =>
     MaterialPageRoute<void>(
